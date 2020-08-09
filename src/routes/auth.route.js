@@ -12,9 +12,9 @@ const {
 const router = Router()
 
 router.get('/users', Users)
-router.get('/user/:id', User)
-router.put('/user/:id', UserUpdate)
-router.delete('/user/:id', UserDelete)
+router.get('/users/:id', User)
+router.put('/users/:id', UserUpdate)
+router.delete('/users/:id', UserDelete)
 router.post('/signup', signUp)
 router.post('/signin', signIn)
 

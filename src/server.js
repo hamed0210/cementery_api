@@ -1,7 +1,9 @@
 const express = require('express')
 const morgan = require('morgan')
+const passport = require('passport')
 
 const authRoutes = require('./routes/auth.route')
+const passportMiddleware = require('./middlewares/passport')
 
 const app = express()
 
@@ -18,6 +20,9 @@ app.use(morgan('dev'))
 app.use(express.json())
 // Trabajar con datos en json
 app.use(express.urlencoded({ extended: false }))
+
+app.use(passport.initialize())
+passport.use(passportMiddleware)
 
 /*
 	Rutas

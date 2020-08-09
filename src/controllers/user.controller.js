@@ -1,4 +1,6 @@
 const { request, response } = require('express')
+const jwt = require('jsonwebtoken')
+const { jwtSecret } = require('../config/config')
 
 const userModel = require('../models/user.model')
 
@@ -60,24 +62,34 @@ const signIn = async (req = request, res = response) => {
 	if (!email || !password) {
 		return res
 			.status(400)
-			.json({ message: 'Please. Send your email and password' })
+			.json({ message: 'Por favor. Envia tu email y contraseña' })
 	}
 
-	// const result = await User.findOne({ email: req.body.email })
+	try {
+		const result = await userModel.findOne({
+			where: {
+				email_usu: email,
+			},
+		})
 
-	// if (!result) {
-	// 	return res.status(400).json({ message: 'The user does not exists' })
-	// }
+		if (!result) {
+			return res.status(400).json({ message: 'El usuario no existe' })
+		}
 
-	// const isMatch = await User.comparePassword(req.body)
+		const isMatch = await userModel.comparePassword(req.body)
 
-	// if (isMatch) {
-	// 	return res.status(200).json({ token: createToken(result) })
-	// }
+		if (isMatch) {
+			return res.status(200).json({ token: createToken(result) })
+		}
 
-	// return res.status(400).json({
-	// 	message: 'The email or password are incorrect',
-	// })
+		return res.status(400).json({
+			message: 'El email o contraseña son incorrectos',
+		})
+	} catch (error) {
+		return res.json({
+			message: 'Ocurrio un error al realizar la operacion',
+		})
+	}
 }
 
 const Users = async (req = request, res = response) => {
@@ -184,6 +196,10 @@ const UserDelete = async (req = request, res = response) => {
 			message: 'Ocurrio un error al realizar la operacion',
 		})
 	}
+}
+
+const createToken = (user) => {
+	return jwt.sign({ id: user.id_usu, email: user.email_usu }, jwtSecret)
 }
 
 module.exports = { signUp, signIn, UserDelete, UserUpdate, Users, User }
