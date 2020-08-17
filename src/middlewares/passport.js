@@ -13,6 +13,8 @@ module.exports = new Strategy(opts, async (payload, done) => {
 		const user = await User.findByPk(payload.id)
 
 		if (user) return done(null, user)
+
+		return done(null, false)
 	} catch (error) {
 		console.log(error)
 	}

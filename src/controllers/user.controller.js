@@ -46,11 +46,11 @@ const signUp = async (req = request, res = response) => {
 		})
 
 		return res.json({
-			message: 'nuevo usuario creado correctamente',
+			message: 'Nuevo usuario creado correctamente',
 			data: newUser,
 		})
 	} catch (error) {
-		return res.json({
+		return res.status(400).json({
 			message: 'Ocurrio un error al realizar la operacion',
 		})
 	}
@@ -86,7 +86,7 @@ const signIn = async (req = request, res = response) => {
 			message: 'El email o contraseña son incorrectos',
 		})
 	} catch (error) {
-		return res.json({
+		return res.status(400).json({
 			message: 'Ocurrio un error al realizar la operacion',
 		})
 	}
@@ -96,7 +96,7 @@ const Users = async (req = request, res = response) => {
 	try {
 		const users = await userModel.findAll()
 		if (users == '') {
-			return res.json({
+			return res.status(400).json({
 				message: 'No se encuentra ningun usuario registrado',
 			})
 		}
@@ -104,7 +104,7 @@ const Users = async (req = request, res = response) => {
 			data: users,
 		})
 	} catch (error) {
-		return res.json({
+		return res.status(400).json({
 			message: 'Ocurrio un error al realizar la operacion',
 		})
 	}
@@ -121,7 +121,7 @@ const User = async (req = request, res = response) => {
 		})
 
 		if (!user)
-			return res.json({
+			return res.status(400).json({
 				message: `No se encuentra ningun usuario registrado con el id ${id}`,
 			})
 
@@ -129,7 +129,7 @@ const User = async (req = request, res = response) => {
 			data: user,
 		})
 	} catch (error) {
-		return res.json({
+		return res.status(400).json({
 			message: 'Ocurrio un error al realizar la operacion',
 		})
 	}
@@ -158,12 +158,12 @@ const UserUpdate = async (req = request, res = response) => {
 				email_usu: email,
 			})
 		} else {
-			return res.json({
+			return res.status(400).json({
 				message: `El usuario con id ${id} no se encuentra registrado`,
 			})
 		}
 		return res.json({
-			message: 'usuario actualizado correctamente',
+			message: 'Usuario actualizado correctamente',
 			data: result,
 		})
 	} catch (error) {
@@ -188,8 +188,7 @@ const UserDelete = async (req = request, res = response) => {
 				message: `Error al intentar eliminar usuario con id ${id}`,
 			})
 		return res.json({
-			message: 'usuario eliminado correctamente',
-			data: result,
+			message: 'Usuario eliminado correctamente',
 		})
 	} catch (error) {
 		return res.json({
@@ -199,7 +198,10 @@ const UserDelete = async (req = request, res = response) => {
 }
 
 const createToken = (user) => {
-	return jwt.sign({ id: user.id_usu, email: user.email_usu }, jwtSecret)
+	// generar un token
+	return jwt.sign({ id: user.id_usu, email: user.email_usu }, jwtSecret, {
+		expiresIn: 86400, //un dia
+	})
 }
 
 module.exports = { signUp, signIn, UserDelete, UserUpdate, Users, User }
