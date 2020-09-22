@@ -1,6 +1,8 @@
 const { request, response } = require('express')
 
 const nichosModel = require('../models/nichos.model')
+const { BovedaCreate } = require('./bovedas.controller')
+const bovedasController = require('./bovedas.controller')
 
 const Nichos = async (req = request, res = response) => {
 	try {
@@ -53,10 +55,17 @@ const Nicho = async (req = request, res = response) => {
 /* los nichos son creados al momento de crearce una boveda, esta funcion es llamada desde bodedaController, en la funcion BovedaCreate */
 const NichoCreate = async (req = request, res = response) => {
 	const cod_boveda = req.cod,
-		cant_nicho = req.cant_nicho,
+		cant_nichos = req.cant_nichos,
 		nichosData = []
+	let countNichos = 0
 
-	for (let i = 0; i < cant_nicho; i++) {
+	const result = await nichosModel.findAndCountAll({
+		where: { cod_boveda_nicho: cod_boveda },
+	})
+	/* Validacion para agregar nichos dependiendo de la cantidad ingresada en la funcion BovedaUpdate del archivo bovedasController */
+	if (result.count > 0) countNichos = result.count
+
+	for (let i = countNichos; i < cant_nichos; i++) {
 		nichosData.push({
 			cod_nicho: `${cod_boveda}_N${i + 1}`,
 			cod_boveda_nicho: cod_boveda,
@@ -68,14 +77,14 @@ const NichoCreate = async (req = request, res = response) => {
 		const newNicho = await nichosModel.bulkCreate(nichosData, {
 			individualHooks: true,
 		})
-		return res.json({
+		return {
 			message: 'Nuevos nichos creados correctamente',
 			data: newNicho,
-		})
+		}
 	} catch (error) {
-		return res.json({
+		return {
 			message: 'Ocurrio un error al realizar la operacion',
-		})
+		}
 	}
 }
 const NichoUpdate = async (req = request, res = response) => {
@@ -108,23 +117,54 @@ const NichoUpdate = async (req = request, res = response) => {
 	}
 }
 const NichoDelete = async (req = request, res = response) => {
-	const { cod } = req.params
+	const params = req.params
+	const cod_boveda = req.cod,
+		cant_nichos = req.cant_nichos
 
 	try {
-		const result = nichosModel.destroy({
-			where: {
-				cod_nicho: cod,
-			},
-		})
-
-		if (result == 0)
-			return res.status(400).json({
-				message: `Error al intentar eliminar nicho con cod ${cod}`,
+		if (params) {
+			const result = nichosModel.destroy({
+				where: {
+					cod_nicho: params.cod,
+				},
 			})
 
-		return res.json({
-			message: 'Nicho eliminado correctamente',
-		})
+			if (result == 0)
+				return res.status(400).json({
+					message: `Error al intentar eliminar nicho con cod ${params.cod}`,
+				})
+
+			return res.json({
+				message: 'Nicho eliminado correctamente',
+			})
+		}
+
+		if (cod_boveda) {
+			let nichosData = []
+
+			const result = await nichosModel.findAndCountAll({
+				where: { cod_boveda_nicho: cod_boveda },
+			})
+
+			const countNichos = result.count
+
+			for (let i = countNichos; i > cant_nichos; i--) {
+				nichosData.push(`${cod_boveda}_N${i}`)
+			}
+
+			const resultDelete = nichosModel.destroy({
+				where: {
+					cod_nicho: nichosData,
+				},
+			})
+			if (resultDelete == 0)
+				return res.status(400).json({
+					message: `Error al intentar eliminar cilindro con cod ${nichosData}`,
+				})
+			return {
+				message: 'Cilindros eliminados correctamente',
+			}
+		}
 	} catch (error) {
 		return res.json({
 			message: 'Ocurrio un error al realizar la operacion',
@@ -135,6 +175,7 @@ const NichoDelete = async (req = request, res = response) => {
 module.exports = {
 	Nichos,
 	Nicho,
+	NichoCreate,
 	NichoUpdate,
 	NichoDelete,
 }

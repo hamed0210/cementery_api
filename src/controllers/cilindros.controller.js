@@ -56,7 +56,16 @@ const CilindroCreate = async (req = request, res = response) => {
 		cant_cylinder = req.cant_cylinder,
 		cylinderData = []
 
-	for (let i = 0; i < cant_cylinder; i++) {
+	let countCylinders = 0
+
+	const result = await cilindrosModel.findAndCountAll({
+		where: { cod_boveda_cilindro: cod_boveda },
+	})
+
+	/* Validacion para agregar cilindros dependiendo de la cantidad ingresada en la funcion BovedaUpdate del archivo bovedasController */
+	if (result.count > 0) countCylinders = result.count
+
+	for (let i = countCylinders; i < cant_cylinder; i++) {
 		cylinderData.push({
 			cod_cilindro: `${cod_boveda}_C${i + 1}`,
 			cod_boveda_cilindro: cod_boveda,
@@ -65,17 +74,17 @@ const CilindroCreate = async (req = request, res = response) => {
 	}
 
 	try {
-		const newCilindro = await cilindrosModel.bulkCreate(cylinderData, {
+		const newCilindros = await cilindrosModel.bulkCreate(cylinderData, {
 			individualHooks: true,
 		})
-		return res.json({
+		return {
 			message: 'Nuevos cilindros creados correctamente',
-			data: newCilindro,
-		})
+			data: newCilindros,
+		}
 	} catch (error) {
-		return res.json({
+		return {
 			message: 'Ocurrio un error al realizar la operacion',
-		})
+		}
 	}
 }
 const CilindroUpdate = async (req = request, res = response) => {
@@ -107,24 +116,56 @@ const CilindroUpdate = async (req = request, res = response) => {
 		})
 	}
 }
+/* los cilindros son eliminados dependiendo de donde es llamada la funcion si es por una ruta se elimina un campo con el codigo enviado por parametro.
+ */
+/* Si la funcion es llamada por la funcion BovedaUpdate del archivo bovedasController se eliminan la cantidad de campos enviadas por parametros por esta misma */
 const CilindroDelete = async (req = request, res = response) => {
-	const { cod } = req.params
+	const params = req.params
+	const cod_boveda = req.cod,
+		cant_cylinder = req.cant_cylinder
 
 	try {
-		const result = cilindrosModel.destroy({
-			where: {
-				cod_cilindro: cod,
-			},
-		})
+		if (params) {
+			const result = cilindrosModel.destroy({
+				where: {
+					cod_cilindro: params.cod,
+				},
+			})
+			if (result == 0)
+				return res.status(400).json({
+					message: `Error al intentar eliminar cilindro con cod ${params.cod}`,
+				})
+			return res.json({
+				message: 'Cilindro eliminado correctamente',
+			})
+		}
 
-		if (result == 0)
-			return res.status(400).json({
-				message: `Error al intentar eliminar cilindro con cod ${cod}`,
+		if (cod_boveda) {
+			let cylinderData = []
+
+			const result = await cilindrosModel.findAndCountAll({
+				where: { cod_boveda_cilindro: cod_boveda },
 			})
 
-		return res.json({
-			message: 'Cilindro eliminado correctamente',
-		})
+			const countCylinders = result.count
+
+			for (let i = countCylinders; i > cant_cylinder; i--) {
+				cylinderData.push(`${cod_boveda}_C${i}`)
+			}
+
+			const resultDelete = cilindrosModel.destroy({
+				where: {
+					cod_cilindro: cylinderData,
+				},
+			})
+			if (resultDelete == 0)
+				return res.status(400).json({
+					message: `Error al intentar eliminar cilindro con cod ${cylinderData}`,
+				})
+			return {
+				message: 'Cilindros eliminados correctamente',
+			}
+		}
 	} catch (error) {
 		return res.json({
 			message: 'Ocurrio un error al realizar la operacion',
