@@ -1,6 +1,6 @@
 const { request, response } = require('express')
 
-const cilindrosModel = require('../models/fallecidos.model')
+const cilindrosModel = require('../models/cilindros.model')
 
 const Cilindros = async (req = request, res = response) => {
 	try {
@@ -8,7 +8,7 @@ const Cilindros = async (req = request, res = response) => {
 
 		if (result == '')
 			return res.status(400).json({
-				message: 'No se encuentra ningun fallecido registrado',
+				message: 'No se encuentra ningun cilindro registrado',
 			})
 
 		return res.json({
@@ -21,18 +21,28 @@ const Cilindros = async (req = request, res = response) => {
 	}
 }
 const Cilindro = async (req = request, res = response) => {
-	const { id } = req.params
+	const { cod } = req.params
 
 	try {
-		const result = await cilindrosModel.findByPk(id)
+		const resultByPk = await cilindrosModel.findByPk(cod)
+		let resultByCodBoveda = null
 
-		if (!result)
+		if (resultByPk) {
+			return res.json({
+				data: resultByPk,
+			})
+		} else {
+			resultByCodBoveda = await cilindrosModel.findAll({
+				where: { cod_boveda_cilindro: cod },
+			})
+		}
+		if (resultByCodBoveda == '')
 			return res.status(400).json({
-				message: `No se encuentra ningun fallecido registrado con el id ${id}`,
+				message: `No se encuentra ningun cilidro registrado con el cod o el cod de boveda ${cod}`,
 			})
 
 		return res.json({
-			data: result,
+			data: resultByCodBoveda,
 		})
 	} catch (error) {
 		return res.json({
@@ -40,75 +50,55 @@ const Cilindro = async (req = request, res = response) => {
 		})
 	}
 }
+/* los cilindros son creados al momento de crearce una boveda, esta funcion es llamada desde bodedaController, en la funcion BovedaCreate */
 const CilindroCreate = async (req = request, res = response) => {
-	// 	const {
-	// 		id,
-	// 		name,
-	// 		lastname,
-	// 		dir,
-	// 		place,
-	// 		date,
-	// 		cod_certi,
-	// 		certi,
-	// 		cause,
-	// 	} = req.body
-	// 	if ((!id, !name, !lastname, !dir, !place, !date, !cod_certi, !certi, !cause))
-	// 		return res.status(400).json({
-	// 			message: 'Por favor ingresar datos requeridos',
-	// 		})
-	// 	try {
-	// 		const result = await cilindrosModel.findByPk(id)
-	// 		if (result)
-	// 			return res.status(400).json({
-	// 				message: 'El fallecido ya se encuentra registrado',
-	// 			})
-	// 		const newFallecido = await cilindrosModel.create({
-	// 			id_fall: id,
-	// 			nombres_fall: name,
-	// 			apellidos_fall: lastname,
-	// 			dir_fall: dir,
-	// 			dir_lugar_fall: place,
-	// 			fecha_muerte_fall: date,
-	// 			cod_certi_muerte_fall: cod_certi,
-	// 			certi_muerte_fall: certi,
-	// 			causa_fall: cause,
-	// 		})
-	// 		return res.json({
-	// 			message: 'Nuevo fallecido creado correctamente',
-	// 			data: newFallecido,
-	// 		})
-	// 	} catch (error) {
-	// 		return res.json({
-	// 			message: 'Ocurrio un error al realizar la operacion',
-	// 		})
-	// 	}
+	const cod_boveda = req.cod,
+		cant_cylinder = req.cant_cylinder,
+		cylinderData = []
+
+	for (let i = 0; i < cant_cylinder; i++) {
+		cylinderData.push({
+			cod_cilindro: `${cod_boveda}_C${i + 1}`,
+			cod_boveda_cilindro: cod_boveda,
+			id_fall_cilindro: null,
+		})
+	}
+
+	try {
+		const newCilindro = await cilindrosModel.bulkCreate(cylinderData, {
+			individualHooks: true,
+		})
+		return res.json({
+			message: 'Nuevos cilindros creados correctamente',
+			data: newCilindro,
+		})
+	} catch (error) {
+		return res.json({
+			message: 'Ocurrio un error al realizar la operacion',
+		})
+	}
 }
 const CilindroUpdate = async (req = request, res = response) => {
-	const { id } = req.params
-	const { name, lastname, dir, place, date, cod_certi, certi, cause } = req.body
+	const { cod } = req.params
+	const { cod_boveda, fall } = req.body
 
 	try {
 		const result = await cilindrosModel.findByPk(id)
 
 		if (result) {
 			await result.update({
-				nombres_fall: name,
-				apellidos_fall: lastname,
-				dir_fall: dir,
-				dir_lugar_fall: place,
-				fecha_muerte_fall: date,
-				cod_certi_muerte_fall: cod_certi,
-				certi_muerte_fall: certi,
-				causa_fall: cause,
+				cod_cilindro: cod,
+				cod_boveda_cilindro: cod_boveda,
+				id_fall_cilindro: fall,
 			})
 		} else {
 			return res.status(400).json({
-				message: `El fallecido con id ${id} no se encuentra registrado`,
+				message: `El cilindro con cod ${cod} no se encuentra registrado`,
 			})
 		}
 
 		return res.json({
-			message: 'Fallecido actualizado correctamente',
+			message: 'Cilindro actualizado correctamente',
 			data: result,
 		})
 	} catch (error) {
@@ -118,22 +108,22 @@ const CilindroUpdate = async (req = request, res = response) => {
 	}
 }
 const CilindroDelete = async (req = request, res = response) => {
-	const { id } = req.params
+	const { cod } = req.params
 
 	try {
 		const result = cilindrosModel.destroy({
 			where: {
-				id_fall: id,
+				cod_cilindro: cod,
 			},
 		})
 
 		if (result == 0)
 			return res.status(400).json({
-				message: `Error al intentar eliminar fallecido con id ${id}`,
+				message: `Error al intentar eliminar cilindro con cod ${cod}`,
 			})
 
 		return res.json({
-			message: 'fallecido eliminado correctamente',
+			message: 'Cilindro eliminado correctamente',
 		})
 	} catch (error) {
 		return res.json({

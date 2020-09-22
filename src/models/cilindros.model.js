@@ -12,7 +12,7 @@ const Cilindros = db.define(
 		cod_boveda_cilindro: {
 			type: Sequelize.STRING,
 		},
-		id_fall: {
+		id_fall_cilindro: {
 			type: Sequelize.INTEGER.UNSIGNED,
 		},
 	},

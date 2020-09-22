@@ -3,7 +3,6 @@ const { Router } = require('express')
 const {
 	Nichos,
 	Nicho,
-	NichoCreate,
 	NichoUpdate,
 	NichoDelete,
 } = require('../controllers/nichos.controller')
@@ -11,9 +10,8 @@ const {
 const router = Router()
 
 router.get('/nichos', Nichos)
-router.get('/nichos/:id', Nicho)
-router.post('/nichos/create', NichoCreate)
-router.put('/nichos/:id', NichoUpdate)
-router.delete('/nichos/:id', NichoDelete)
+router.get('/nichos/:cod', Nicho)
+router.put('/nichos/:cod', NichoUpdate)
+router.delete('/nichos/:cod', NichoDelete)
 
 module.exports = router

@@ -1,6 +1,10 @@
 const { request, response } = require('express')
 
 const bovedasModel = require('../models/bovedas.model')
+const cilindrosModel = require('../models/cilindros.model')
+const nichosModel = require('../models/nichos.model')
+const cilindrosCreate = require('../controllers/cilindros.controller')
+	.CilindroCreate
 
 const Bovedas = async (req = request, res = response) => {
 	try {
@@ -42,6 +46,7 @@ const Boveda = async (req = request, res = response) => {
 }
 const BovedaCreate = async (req = request, res = response) => {
 	const { cod, cant_cylinder, type, cant_nichos, id_pro, id_usu } = req.body
+	const cylinderParams = { cod, cant_cylinder }
 
 	if ((!cod, !cant_cylinder, !type, !cant_nichos, !id_pro, !id_usu))
 		return res.status(400).json({
@@ -64,6 +69,8 @@ const BovedaCreate = async (req = request, res = response) => {
 			id_pro_boveda: id_pro,
 			id_usu_boveda: id_usu,
 		})
+
+		await cilindrosCreate(cylinderParams)
 
 		return res.json({
 			message: 'Nueva boveda creada correctamente',

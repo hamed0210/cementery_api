@@ -1,6 +1,6 @@
 const { request, response } = require('express')
 
-const nichosModel = require('../models/fallecidos.model')
+const nichosModel = require('../models/nichos.model')
 
 const Nichos = async (req = request, res = response) => {
 	try {
@@ -8,7 +8,7 @@ const Nichos = async (req = request, res = response) => {
 
 		if (result == '')
 			return res.status(400).json({
-				message: 'No se encuentra ningun fallecido registrado',
+				message: 'No se encuentra ningun nicho registrado',
 			})
 
 		return res.json({
@@ -21,18 +21,28 @@ const Nichos = async (req = request, res = response) => {
 	}
 }
 const Nicho = async (req = request, res = response) => {
-	const { id } = req.params
+	const { cod } = req.params
 
 	try {
-		const result = await nichosModel.findByPk(id)
+		const resultByPk = await nichosModel.findByPk(cod)
+		let resultByCodBoveda = null
 
-		if (!result)
+		if (resultByPk) {
+			return res.json({
+				data: resultByPk,
+			})
+		} else {
+			resultByCodBoveda = await nichosModel.findAll({
+				where: { cod_boveda_nicho: cod },
+			})
+		}
+		if (resultByCodBoveda == '')
 			return res.status(400).json({
-				message: `No se encuentra ningun fallecido registrado con el id ${id}`,
+				message: `No se encuentra ningun nicho registrado con el cod o el cod de boveda ${cod}`,
 			})
 
 		return res.json({
-			data: result,
+			data: resultByCodBoveda,
 		})
 	} catch (error) {
 		return res.json({
@@ -40,75 +50,55 @@ const Nicho = async (req = request, res = response) => {
 		})
 	}
 }
+/* los nichos son creados al momento de crearce una boveda, esta funcion es llamada desde bodedaController, en la funcion BovedaCreate */
 const NichoCreate = async (req = request, res = response) => {
-	// const {
-	// 	id,
-	// 	name,
-	// 	lastname,
-	// 	dir,
-	// 	place,
-	// 	date,
-	// 	cod_certi,
-	// 	certi,
-	// 	cause,
-	// } = req.body
-	// if ((!id, !name, !lastname, !dir, !place, !date, !cod_certi, !certi, !cause))
-	// 	return res.status(400).json({
-	// 		message: 'Por favor ingresar datos requeridos',
-	// 	})
-	// try {
-	// 	const result = await nichosModel.findByPk(id)
-	// 	if (result)
-	// 		return res.status(400).json({
-	// 			message: 'El fallecido ya se encuentra registrado',
-	// 		})
-	// 	const newFallecido = await nichosModel.create({
-	// 		id_fall: id,
-	// 		nombres_fall: name,
-	// 		apellidos_fall: lastname,
-	// 		dir_fall: dir,
-	// 		dir_lugar_fall: place,
-	// 		fecha_muerte_fall: date,
-	// 		cod_certi_muerte_fall: cod_certi,
-	// 		certi_muerte_fall: certi,
-	// 		causa_fall: cause,
-	// 	})
-	// 	return res.json({
-	// 		message: 'Nuevo fallecido creado correctamente',
-	// 		data: newFallecido,
-	// 	})
-	// } catch (error) {
-	// 	return res.json({
-	// 		message: 'Ocurrio un error al realizar la operacion',
-	// 	})
-	// }
-}
-const NichoUpdate = async (req = request, res = response) => {
-	const { id } = req.params
-	const { name, lastname, dir, place, date, cod_certi, certi, cause } = req.body
+	const cod_boveda = req.cod,
+		cant_nicho = req.cant_nicho,
+		nichosData = []
+
+	for (let i = 0; i < cant_nicho; i++) {
+		nichosData.push({
+			cod_nicho: `${cod_boveda}_N${i + 1}`,
+			cod_boveda_nicho: cod_boveda,
+			id_fall_nicho: null,
+		})
+	}
 
 	try {
-		const result = await nichosModel.findByPk(id)
+		const newNicho = await nichosModel.bulkCreate(nichosData, {
+			individualHooks: true,
+		})
+		return res.json({
+			message: 'Nuevos nichos creados correctamente',
+			data: newNicho,
+		})
+	} catch (error) {
+		return res.json({
+			message: 'Ocurrio un error al realizar la operacion',
+		})
+	}
+}
+const NichoUpdate = async (req = request, res = response) => {
+	const { cod } = req.params
+	const { cod_boveda, fall } = req.body
+
+	try {
+		const result = await nichosModel.findByPk(cod)
 
 		if (result) {
 			await result.update({
-				nombres_fall: name,
-				apellidos_fall: lastname,
-				dir_fall: dir,
-				dir_lugar_fall: place,
-				fecha_muerte_fall: date,
-				cod_certi_muerte_fall: cod_certi,
-				certi_muerte_fall: certi,
-				causa_fall: cause,
+				cod_nicho: cod,
+				cod_boveda_nicho: cod_boveda,
+				id_fall_nicho: fall,
 			})
 		} else {
 			return res.status(400).json({
-				message: `El fallecido con id ${id} no se encuentra registrado`,
+				message: `El nicho con cod ${cod} no se encuentra registrado`,
 			})
 		}
 
 		return res.json({
-			message: 'Fallecido actualizado correctamente',
+			message: 'Nicho actualizado correctamente',
 			data: result,
 		})
 	} catch (error) {
@@ -118,22 +108,22 @@ const NichoUpdate = async (req = request, res = response) => {
 	}
 }
 const NichoDelete = async (req = request, res = response) => {
-	const { id } = req.params
+	const { cod } = req.params
 
 	try {
 		const result = nichosModel.destroy({
 			where: {
-				id_fall: id,
+				cod_nicho: cod,
 			},
 		})
 
 		if (result == 0)
 			return res.status(400).json({
-				message: `Error al intentar eliminar fallecido con id ${id}`,
+				message: `Error al intentar eliminar nicho con cod ${cod}`,
 			})
 
 		return res.json({
-			message: 'fallecido eliminado correctamente',
+			message: 'Nicho eliminado correctamente',
 		})
 	} catch (error) {
 		return res.json({
@@ -145,7 +135,6 @@ const NichoDelete = async (req = request, res = response) => {
 module.exports = {
 	Nichos,
 	Nicho,
-	NichoCreate,
 	NichoUpdate,
 	NichoDelete,
 }
