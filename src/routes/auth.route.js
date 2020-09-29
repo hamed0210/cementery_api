@@ -1,21 +1,31 @@
 const { Router } = require('express')
+const passport = require('passport')
 
-const {
-	Users,
-	User,
-	signIn,
-	signUp,
-	UserUpdate,
-	UserDelete,
-} = require('../controllers/user.controller')
+const { signIn, signUp } = require('../controllers/auth.controller')
+const { isNotLogged } = require('../libs/auth.libs')
 
 const router = Router()
 
-router.get('/users', Users)
-router.get('/users/:id', User)
-router.put('/users/:id', UserUpdate)
-router.delete('/users/:id', UserDelete)
-router.post('/signup', signUp)
-router.post('/signin', signIn)
+router.post(
+	'/signup',
+	signUp,
+	passport.authenticate('jwt', {
+		session: false,
+		// successRedirect: '/home',
+		// failureRedirect: '/signin',
+		// failureFlash: true,
+	})
+)
+router.post(
+	'/signin',
+	isNotLogged,
+	signIn,
+	passport.authenticate('jwt', {
+		session: false,
+		// successRedirect: '/home',
+		// failureRedirect: '/signin',
+		// failureFlash: true,
+	})
+)
 
 module.exports = router

@@ -4,13 +4,17 @@ const { jwtSecret } = require('../config/config')
 const User = require('../models/user.model')
 
 const opts = {
+	//Esta obcion extrae el token enviado en la cabezera authorization, con la palabra bearer
 	jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
 	secretOrKey: jwtSecret,
 }
 
+// payload = contenido que esta dentro del token en la funcion createToken
 module.exports = new Strategy(opts, async (payload, done) => {
 	try {
-		const user = await User.findByPk(payload.id)
+		const user = await User.findByPk(payload.id, {
+			attributes: { exclude: 'pass_usu' },
+		})
 
 		if (user) return done(null, user)
 

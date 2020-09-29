@@ -43,7 +43,8 @@ const User = sequelize.define(
 User.addHook('beforeValidate', async (user, next) => {
 	if (!user.changed('pass_usu')) return next()
 
-	const hash = await bcrypt.hash(user.pass_usu, 10)
+	const salt = await bcrypt.genSalt(10)
+	const hash = await bcrypt.hash(user.pass_usu, salt)
 
 	user.pass_usu = hash
 })

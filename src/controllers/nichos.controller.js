@@ -116,6 +116,9 @@ const NichoUpdate = async (req = request, res = response) => {
 		})
 	}
 }
+/* los nichos son eliminados dependiendo de donde es llamada la funcion si es por una ruta se elimina un campo con el codigo enviado por parametro.
+ */
+/* Si la funcion es llamada por la funcion BovedaUpdate del archivo bovedasController se eliminan la cantidad de campos enviadas por parametros por esta misma */
 const NichoDelete = async (req = request, res = response) => {
 	const params = req.params
 	const cod_boveda = req.cod,
